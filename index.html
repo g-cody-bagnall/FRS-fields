@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FRS Field Management — DDPSC</title>
+<title>FRS Field Management -- DDPSC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
 :root{
@@ -217,8 +217,7 @@ async function fetchCSV(tab){
 }
 
 function parseCSV(text){
-  const lines=text.trim().split('
-');
+  const lines=text.trim().split('\n');
   if(lines.length<2)return[];
   const headers=parseCSVLine(lines[0]);
   return lines.slice(1).map(line=>{
@@ -249,7 +248,7 @@ async function loadData(){
     HISTORY={};hr.forEach(r=>{if(!r.field_id)return;if(!HISTORY[r.field_id])HISTORY[r.field_id]=[];HISTORY[r.field_id].push(r);});
     loaded=true;
     if(!Object.keys(FIELDS).length){
-      document.getElementById('root').innerHTML=`<div class="setup-banner"><strong>Sheet connected — add your field data</strong>Your Google Sheet is connected but the Fields tab is empty. Add rows following the column structure, then refresh.<br><br><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--dd-blue);font-weight:600">Open Google Sheet to add data &rarr;</a></div>`;
+      document.getElementById('root').innerHTML=`<div class="setup-banner"><strong>Sheet connected -- add your field data</strong>Your Google Sheet is connected but the Fields tab is empty. Add rows following the column structure, then refresh.<br><br><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--dd-blue);font-weight:600">Open Google Sheet to add data &rarr;</a></div>`;
       return;
     }
     render();
@@ -282,7 +281,7 @@ function render(){
 function renderField(root,fid){
   const f=FIELDS[fid];
   const isP=f.perennial==='TRUE';
-  const opts=Object.keys(FIELDS).sort().map(id=>`<option value="${id}"${id===fid?' selected':''}>${id} — ${FIELDS[id].crop.split(',')[0]} (${FIELDS[id].lab})</option>`).join('');
+  const opts=Object.keys(FIELDS).sort().map(id=>`<option value="${id}"${id===fid?' selected':''}>${id} -- ${FIELDS[id].crop.split(',')[0]} (${FIELDS[id].lab})</option>`).join('');
   root.innerHTML=`
     <div class="sel-bar"><label>Field:</label><select onchange="go('field',this.value)">${opts}</select></div>
     <div class="hint"><i class="ti ti-qrcode"></i> QR links to this field &nbsp;&middot;&nbsp; <a href="?view=index" onclick="event.preventDefault();go('index')">All fields</a> &nbsp;&middot;&nbsp; <a href="?view=qr" onclick="event.preventDefault();go('qr')">Print QR</a></div>
@@ -298,13 +297,13 @@ function renderField(root,fid){
 
 function buildHdr(f,isP){
   const ic=isP?'per':'ann';
-  const dims=(f.width_ft&&f.length_ft)?`${f.width_ft}′ × ${f.length_ft}′`:'See notes';
+  const dims=(f.width_ft&&f.length_ft)?`${f.width_ft}ft x ${f.length_ft}ft`:'See notes';
   const flags=f.restrictions?f.restrictions.split(';').filter(Boolean).map(r=>`<span class="flag w"><i class="ti ti-alert-triangle" style="font-size:11px"></i>${r.trim()}</span>`).join(''):'';
   document.getElementById('fhdr').innerHTML=`<div class="fhdr">
     <div class="fhdr-row">
       <div style="display:flex;align-items:center;gap:10px;min-width:0">
         <div class="ficon ${ic}">${f.field_id}</div>
-        <div class="fname"><h1>${f.section} Field ${f.field_id}</h1><div class="sub">${f.pi} · ${f.crop.split(',')[0]}</div></div>
+        <div class="fname"><h1>${f.section} Field ${f.field_id}</h1><div class="sub">${f.pi} . ${f.crop.split(',')[0]}</div></div>
       </div>
       <span class="spill ${ic}">${isP?'Perennial':f.year}</span>
     </div>
@@ -404,10 +403,10 @@ function buildDetails(f){
       <div class="sc"><label>UAV imaging</label><span>${f.imaging||'N'}</span></div>
       <div class="sc"><label>Giddings probe</label><span>${f.giddings||'N'}</span></div>
       <div class="sc"><label>Mini-Rhizo</label><span>${f.mini_rhizo||'N'}</span></div>
-      <div class="sc"><label>Project length</label><span>${f.project_length||'—'}</span></div>
+      <div class="sc"><label>Project length</label><span>${f.project_length||'--'}</span></div>
       ${f.planting_date?`<div class="sc"><label>Plant date</label><span>${f.planting_date}</span></div>`:''}
     </div></div></div>`;
-  document.getElementById('pane-details').innerHTML=`<p class="sh">${f.year} season — ${f.crop}</p>${plotSec}${nSec}${obsSec}${f.notes?`<div class="note-box"><strong>Notes:</strong> ${f.notes}</div>`:''}`;
+  document.getElementById('pane-details').innerHTML=`<p class="sh">${f.year} season -- ${f.crop}</p>${plotSec}${nSec}${obsSec}${f.notes?`<div class="note-box"><strong>Notes:</strong> ${f.notes}</div>`:''}`;
 }
 
 function toggleCard(id){document.getElementById(id).classList.toggle('on');}
@@ -422,7 +421,7 @@ function buildHistory(fid,f){
   document.getElementById('pane-history').innerHTML=`
     <p class="sh">Crop rotation</p>
     <div class="card"><div class="card-bd" style="display:block;padding:0"><table class="htbl"><thead><tr><th>Year</th><th>Lab / PI</th><th>Crop</th></tr></thead><tbody>${rows}</tbody></table></div></div>
-    ${f.perennial==='TRUE'?'<div style="margin-top:.5rem"><span class="flag i"><i class="ti ti-leaf" style="font-size:11px"></i>Perennial — no seasonal reset</span></div>':''}
+    ${f.perennial==='TRUE'?'<div style="margin-top:.5rem"><span class="flag i"><i class="ti ti-leaf" style="font-size:11px"></i>Perennial -- no seasonal reset</span></div>':''}
     ${arch.length?`<p class="sh" style="margin-top:1rem">Completed tasks this season</p><div class="card"><div class="card-bd" style="display:block;padding:.5rem .75rem">${arch.map(t=>`<div style="padding:.4rem 0;font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)"><i class="ti ti-check" style="color:var(--green-mid)"></i>${t.title}</div>`).join('')}</div></div>`:''}
     <p style="font-size:11px;color:var(--text-faint);margin-top:.75rem">Add past seasons to the History tab in your Google Sheet to build the rotation record.</p>`;
 }
@@ -430,7 +429,7 @@ function buildHistory(fid,f){
 function buildManage(fid,f,isP){
   const ct=customTasks[fid]||[];
   document.getElementById('pane-manage').innerHTML=`
-    <p class="sh">Field ${fid} — season management</p>
+    <p class="sh">Field ${fid} -- season management</p>
     <div class="card" id="dc-mgmt">
       <div class="card-hd" onclick="toggleCard('dc-mgmt')"><div class="card-ttl"><i class="ti ti-calendar-event"></i>Season status</div><i class="ti ti-chevron-down chev"></i></div>
       <div class="card-bd"><div class="sgrid" style="padding-top:.625rem">
@@ -439,7 +438,7 @@ function buildManage(fid,f,isP){
         <div class="sc"><label>Crop</label><span>${f.crop.split(',')[0]}</span></div>
         <div class="sc"><label>Custom tasks</label><span>${ct.length}</span></div>
       </div>
-      ${!isP?`<div class="reset-box"><div class="reset-ttl"><i class="ti ti-refresh" style="font-size:13px"></i> Season reset</div><div class="reset-desc">Archives completed tasks to History and clears the checklist for the new season.</div><button class="btn-danger" onclick="resetSeason('${fid}')">Reset season for ${fid}</button></div>`:`<div class="per-notice"><i class="ti ti-leaf"></i> Perennial — tasks roll forward until project end.</div>`}
+      ${!isP?`<div class="reset-box"><div class="reset-ttl"><i class="ti ti-refresh" style="font-size:13px"></i> Season reset</div><div class="reset-desc">Archives completed tasks to History and clears the checklist for the new season.</div><button class="btn-danger" onclick="resetSeason('${fid}')">Reset season for ${fid}</button></div>`:`<div class="per-notice"><i class="ti ti-leaf"></i> Perennial -- tasks roll forward until project end.</div>`}
       </div>
     </div>
     <p class="sh" style="margin-top:1rem">Custom tasks (${ct.length})</p>
@@ -468,7 +467,7 @@ function renderIndex(root){
     const per=f.perennial==='TRUE';
     return`<div class="idx-card" onclick="go('field','${f.field_id}')">
       <div class="idx-l"><div class="idx-icon ${per?'per':'ann'}" style="background:var(--${per?'purple':'green'}-light);color:var(--${per?'purple':'green'});border-color:${per?'#AFA9EC':'var(--green-border)'}">${f.field_id}</div>
-      <div><div class="idx-ttl">${f.section} — ${f.field_id}</div><div class="idx-sub">${f.pi} · ${f.crop.split(',')[0]} · ${f.acreage} ac</div></div></div>
+      <div><div class="idx-ttl">${f.section} -- ${f.field_id}</div><div class="idx-sub">${f.pi} . ${f.crop.split(',')[0]} . ${f.acreage} ac</div></div></div>
       <i class="ti ti-chevron-right" style="color:var(--text-faint);font-size:16px;flex-shrink:0"></i></div>`;
   }).join('');
   root.innerHTML=`
@@ -500,7 +499,7 @@ function renderQR(root){
     Object.values(FIELDS).sort((a,b)=>a.field_id.localeCompare(b.field_id)).forEach(f=>{
       const url=`${SITE_URL}?field=${f.field_id}`;
       const d=document.createElement('div');d.className='qr-card';
-      d.innerHTML=`<canvas id="qr-${f.field_id}" style="margin:0 auto 8px;display:block"></canvas><div class="qr-lbl">${f.field_id}</div><div class="qr-sub">${f.section} · ${f.crop.split(',')[0]}</div><div class="qr-url">${url}</div>`;
+      d.innerHTML=`<canvas id="qr-${f.field_id}" style="margin:0 auto 8px;display:block"></canvas><div class="qr-lbl">${f.field_id}</div><div class="qr-sub">${f.section} . ${f.crop.split(',')[0]}</div><div class="qr-url">${url}</div>`;
       g.appendChild(d);
       QRCode.toCanvas(document.getElementById('qr-'+f.field_id),url,{width:140,margin:1},()=>{});
     });
