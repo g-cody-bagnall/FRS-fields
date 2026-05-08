@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FRS Field Management -- DDPSC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.1/qrcode.min.js"></script>
 <style>
 :root{
   --dd-blue:#2B6A8A;--dd-blue-light:#E3EFF5;--dd-blue-mid:#4A90B8;
@@ -502,28 +502,42 @@ function renderQR(root){
       <div id="qrStatus" style="font-size:13px;color:var(--text-muted);padding:.5rem 0">Generating QR codes...</div><div class="qr-grid" id="qrGrid"></div>
     </div>`;
   function generateQRs(){
-    const g=document.getElementById('qrGrid');
+    var g=document.getElementById('qrGrid');
+    var status=document.getElementById('qrStatus');
     if(!g)return;
-    Object.values(FIELDS).sort((a,b)=>a.field_id.localeCompare(b.field_id)).forEach(f=>{
-      const url=SITE_URL+'?field='+f.field_id;
-      const d=document.createElement('div');d.className='qr-card';
-      const canvas=document.createElement('canvas');
-      canvas.id='qr-'+f.field_id;
-      canvas.style.cssText='margin:0 auto 8px;display:block';
-      const lbl=document.createElement('div');lbl.className='qr-lbl';lbl.textContent=f.field_id;
-      const sub=document.createElement('div');sub.className='qr-sub';sub.textContent=f.section+' - '+f.crop.split(',')[0];
-      const urlDiv=document.createElement('div');urlDiv.className='qr-url';urlDiv.textContent=url;
-      d.appendChild(canvas);d.appendChild(lbl);d.appendChild(sub);d.appendChild(urlDiv);
-      g.appendChild(d);
-      QRCode.toCanvas(canvas,url,{width:150,margin:2},function(err){
-        if(err)console.error(err);
-        var s=document.getElementById('qrStatus');
-        if(s)s.style.display='none';
-      });
+    if(typeof QRCode==='undefined'){
+      if(status)status.textContent='QR library not loaded. Check internet connection.';
+      return;
+    }
+    var fields=Object.values(FIELDS).sort(function(a,b){return a.field_id.localeCompare(b.field_id);});
+    if(fields.length===0){
+      if(status)status.textContent='No fields found. Check your Google Sheet.';
+      return;
+    }
+    g.innerHTML='';
+    fields.forEach(function(f){
+      var url=SITE_URL+'?field='+f.field_id;
+      var card=document.createElement('div');
+      card.className='qr-card';
+      var qrDiv=document.createElement('div');
+      qrDiv.id='qr-'+f.field_id;
+      qrDiv.style.cssText='margin:0 auto 8px;width:150px;height:150px;';
+      var lbl=document.createElement('div');lbl.className='qr-lbl';lbl.textContent=f.field_id;
+      var sub=document.createElement('div');sub.className='qr-sub';sub.textContent=f.section+' - '+f.crop.split(',')[0];
+      var urlDiv=document.createElement('div');urlDiv.className='qr-url';urlDiv.textContent=url;
+      card.appendChild(qrDiv);card.appendChild(lbl);card.appendChild(sub);card.appendChild(urlDiv);
+      g.appendChild(card);
+      try{
+        new QRCode(qrDiv,{text:url,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      }catch(e){
+        console.error('QR failed for '+f.field_id+':',e);
+        qrDiv.textContent='QR error';
+      }
     });
+    if(status)status.style.display='none';
   }
   if(typeof QRCode!=='undefined'){setTimeout(generateQRs,100);}
-  else{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';s.onload=function(){setTimeout(generateQRs,100);};document.head.appendChild(s);}
+  else{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.1/qrcode.min.js';s.onload=function(){setTimeout(generateQRs,100);};document.head.appendChild(s);}
 }
 
 function openLogin(){document.getElementById('loginModal').classList.add('on');setTimeout(()=>document.getElementById('loginPw').focus(),100);}
