@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FRS Field Management -- DDPSC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 :root{
   --dd-blue:#2B6A8A;--dd-blue-light:#E3EFF5;--dd-blue-mid:#4A90B8;
@@ -492,19 +493,25 @@ function renderQR(root){
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem">Each code links to that field. Print, laminate, and mount on field signs.</p>
       <div class="qr-grid" id="qrGrid"></div>
     </div>`;
-  const s=document.createElement('script');
-  s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-  s.onload=()=>{
+  function generateQRs(){
     const g=document.getElementById('qrGrid');
+    if(!g)return;
     Object.values(FIELDS).sort((a,b)=>a.field_id.localeCompare(b.field_id)).forEach(f=>{
-      const url=`${SITE_URL}?field=${f.field_id}`;
+      const url=SITE_URL+'?field='+f.field_id;
       const d=document.createElement('div');d.className='qr-card';
-      d.innerHTML=`<canvas id="qr-${f.field_id}" style="margin:0 auto 8px;display:block"></canvas><div class="qr-lbl">${f.field_id}</div><div class="qr-sub">${f.section} . ${f.crop.split(',')[0]}</div><div class="qr-url">${url}</div>`;
+      const canvas=document.createElement('canvas');
+      canvas.id='qr-'+f.field_id;
+      canvas.style.cssText='margin:0 auto 8px;display:block';
+      const lbl=document.createElement('div');lbl.className='qr-lbl';lbl.textContent=f.field_id;
+      const sub=document.createElement('div');sub.className='qr-sub';sub.textContent=f.section+' - '+f.crop.split(',')[0];
+      const urlDiv=document.createElement('div');urlDiv.className='qr-url';urlDiv.textContent=url;
+      d.appendChild(canvas);d.appendChild(lbl);d.appendChild(sub);d.appendChild(urlDiv);
       g.appendChild(d);
-      QRCode.toCanvas(document.getElementById('qr-'+f.field_id),url,{width:140,margin:1},()=>{});
+      QRCode.toCanvas(canvas,url,{width:150,margin:2},function(err){if(err)console.error(err);});
     });
-  };
-  document.head.appendChild(s);
+  }
+  if(typeof QRCode!=='undefined'){setTimeout(generateQRs,100);}
+  else{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';s.onload=function(){setTimeout(generateQRs,100);};document.head.appendChild(s);}
 }
 
 function openLogin(){document.getElementById('loginModal').classList.add('on');setTimeout(()=>document.getElementById('loginPw').focus(),100);}
