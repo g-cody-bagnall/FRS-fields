@@ -172,6 +172,43 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .modal p{font-size:13px;color:var(--text-muted);margin-bottom:.75rem;}
 .modal input{width:100%;margin-bottom:.625rem;font-size:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);}
 .modal-err{font-size:12px;color:var(--red);margin-bottom:.5rem;display:none;}
+
+/* SPRAY LOG ENTRY */
+.log-form{background:var(--bg);border:1px solid var(--border);border-radius:var(--rlg);padding:.875rem;margin-top:.75rem;}
+.log-form input,.log-form select,.log-form textarea{width:100%;margin-bottom:8px;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:7px 10px;color:var(--text);}
+.log-form textarea{resize:none;height:52px;}
+.log-row{display:flex;gap:8px;margin-bottom:8px;}
+.log-row input,.log-row select{margin-bottom:0;flex:1;}
+.log-entry{display:flex;align-items:flex-start;justify-content:space-between;padding:.6rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;}
+.log-entry-left{}
+.log-entry-date{font-size:11px;color:var(--text-faint);margin-bottom:2px;}
+.log-entry-product{font-size:13px;font-weight:600;color:var(--text);}
+.log-entry-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+
+/* REVIEW QUEUE */
+.sub-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:.875rem 1rem;margin-bottom:10px;}
+.sub-card.pending{border-left:3px solid var(--amber);}
+.sub-card.approved{border-left:3px solid var(--green-mid);opacity:.7;}
+.sub-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem;}
+.sub-title{font-size:14px;font-weight:600;color:var(--text);}
+.sub-pi{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.sub-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.sub-badge.pending{background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-border);}
+.sub-badge.approved{background:var(--green-light);color:var(--green);border:1px solid var(--green-border);}
+.sub-detail{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:.75rem;}
+.sub-assign{display:flex;gap:8px;align-items:center;}
+.sub-assign input{font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 10px;color:var(--text);flex:1;}
+
+/* ROLLOVER */
+.rollover-preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);margin-bottom:8px;overflow:hidden;}
+.rollover-head{padding:.65rem .875rem;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase;}
+.rollover-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .875rem;border-bottom:1px solid var(--border);font-size:12px;}
+.rollover-row:last-child{border-bottom:none;}
+.rollover-fid{font-weight:600;color:var(--text);min-width:40px;}
+.rollover-crop{color:var(--text-muted);flex:1;padding:0 .5rem;}
+.rollover-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;}
+.rollover-badge.reset{background:var(--green-light);color:var(--green);}
+.rollover-badge.keep{background:var(--purple-light);color:var(--purple);}
 </style>
 </head>
 <body>
@@ -210,9 +247,11 @@ const SHEET_ID = '1LVHRXQ4ESfgCUXvKJ7jaM57LX8dKrMY3JJsxg2i4TjI';
 const FIELDS_TAB = 'Fields';
 const TASKS_TAB = 'Tasks';
 const HISTORY_TAB = 'History';
+const APPS_TAB = 'Applications';
+const SUBS_TAB = 'Submissions';
 const SITE_URL = window.location.origin + window.location.pathname;
 
-let adminMode=false,FIELDS={},TASKS={},HISTORY={},taskState={},customTasks={},loaded=false;
+let adminMode=false,FIELDS={},TASKS={},HISTORY={},APPS={},SUBS=[],taskState={},customTasks={},loaded=false;
 const TAG_LBL={fert:'Fertilizer',herb:'Herbicide',plant:'Planting',obs:'Observation',irrig:'Irrigation',harvest:'Harvest'};
 const TAG_CLS={fert:'tf',herb:'th',plant:'tp',obs:'to',irrig:'ti',harvest:'tv'};
 
@@ -250,10 +289,12 @@ function parseCSVLine(line){
 async function loadData(){
   document.getElementById('root').innerHTML='<div class="loading"><div class="spinner"></div><div class="loading-text">Loading field data from Google Sheets...</div></div>';
   try{
-    const[fr,tr,hr]=await Promise.all([fetchCSV(FIELDS_TAB),fetchCSV(TASKS_TAB).catch(()=>[]),fetchCSV(HISTORY_TAB).catch(()=>[])]);
+    const[fr,tr,hr,ar,sr]=await Promise.all([fetchCSV(FIELDS_TAB),fetchCSV(TASKS_TAB).catch(()=>[]),fetchCSV(HISTORY_TAB).catch(()=>[]),fetchCSV(APPS_TAB).catch(()=>[]),fetchCSV(SUBS_TAB).catch(()=>[])]);
     FIELDS={};fr.forEach(r=>{if(r.field_id)FIELDS[r.field_id]=r;});
     TASKS={};tr.forEach(r=>{if(!r.field_id)return;if(!TASKS[r.field_id])TASKS[r.field_id]=[];TASKS[r.field_id].push(r);});
     HISTORY={};hr.forEach(r=>{if(!r.field_id)return;if(!HISTORY[r.field_id])HISTORY[r.field_id]=[];HISTORY[r.field_id].push(r);});
+    APPS={};ar.forEach(r=>{if(!r.field_id)return;if(!APPS[r.field_id])APPS[r.field_id]=[];APPS[r.field_id].push(r);});
+    SUBS=sr;
     loaded=true;
     if(!Object.keys(FIELDS).length){
       document.getElementById('root').innerHTML=`<div class="setup-banner"><strong>Sheet connected -- add your field data</strong>Your Google Sheet is connected but the Fields tab is empty. Add rows following the column structure, then refresh.<br><br><a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--dd-blue);font-weight:600">Open Google Sheet to add data &rarr;</a></div>`;
@@ -280,6 +321,8 @@ function render(){
   const root=document.getElementById('root');
   if(view==='index')renderIndex(root);
   else if(view==='qr')renderQR(root);
+  else if(view==='review'){if(adminMode)renderReview(root);else{openLogin();go('field',null);}}
+  else if(view==='rollover'){if(adminMode)renderRollover(root);else{openLogin();go('field',null);}}
   else{
     const fid=param('field')&&FIELDS[param('field')]?param('field'):Object.keys(FIELDS)[0];
     renderField(root,fid);
@@ -292,14 +335,15 @@ function renderField(root,fid){
   const opts=Object.keys(FIELDS).sort().map(id=>`<option value="${id}"${id===fid?' selected':''}>${id} -- ${FIELDS[id].crop.split(',')[0]} (${FIELDS[id].lab})</option>`).join('');
   root.innerHTML=`
     <div class="sel-bar"><label>Field:</label><select onchange="go('field',this.value)">${opts}</select></div>
-    <div class="hint"><i class="ti ti-qrcode"></i> QR links to this field &nbsp;&middot;&nbsp; <a href="?view=index" onclick="event.preventDefault();go('index')">All fields</a> &nbsp;&middot;&nbsp; <a href="?view=qr" onclick="event.preventDefault();go('qr')">Print QR</a></div>
+    <div class="hint"><i class="ti ti-qrcode"></i> QR links to this field &nbsp;&middot;&nbsp; <a href="?view=index" onclick="event.preventDefault();go('index')">All fields</a> &nbsp;&middot;&nbsp; <a href="?view=qr" onclick="event.preventDefault();go('qr')">Print QR</a> &nbsp;&middot;&nbsp; <span id="adminLinks" style="display:none"><a href="?view=review" onclick="event.preventDefault();go('review')" style="color:var(--amber)">Review queue</a> &nbsp;&middot;&nbsp; <a href="?view=rollover" onclick="event.preventDefault();go('rollover')" style="color:var(--red)">Season rollover</a></span></div>
     <div id="fhdr"></div>
     <div class="tabs" id="tabBar"></div>
     <div id="pane-tasks" class="pane"></div>
     <div id="pane-details" class="pane"></div>
     <div id="pane-history" class="pane"></div>
+    <div id="pane-log" class="pane"></div>
     <div id="pane-manage" class="pane"></div>`;
-  buildHdr(f,isP);buildTabBar('tasks');buildTasks(fid,isP);buildDetails(f);buildHistory(fid,f);
+  buildHdr(f,isP);buildTabBar('tasks');buildTasks(fid,isP);buildDetails(f);buildHistory(fid,f);buildLog(fid);
   if(adminMode)buildManage(fid,f,isP);
 }
 
@@ -385,6 +429,70 @@ function saveTask(fid){
   hideAP(fid);buildTasks(fid,FIELDS[fid].perennial==='TRUE');
 }
 
+function buildLog(fid){
+  var apps=APPS[fid]||[];
+  var entries=apps.map(function(a,i){
+    return '<div class="log-entry">'
+      +'<div class="log-entry-left">'
+      +'<div class="log-entry-date">'+a.date+' &nbsp;<span class="tag '+(a.type==='herb'?'th':a.type==='fert'?'tf':a.type==='irrig'?'ti':'to')+'" style="font-size:10px">'+(a.type||'obs')+'</span></div>'
+      +'<div class="log-entry-product">'+a.product+'</div>'
+      +'<div class="log-entry-meta">'+(a.rate?a.rate+' &nbsp;&middot;&nbsp; ':'')+''+(a.applicator||'')+(a.weather?' &nbsp;&middot;&nbsp; '+a.weather:'')+'</div>'
+      +(a.notes?'<div class="log-entry-meta" style="font-style:italic">'+a.notes+'</div>':'')
+      +'</div></div>';
+  }).join('');
+
+  var formHTML='<div class="log-form">'
+    +'<p style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Log new application</p>'
+    +'<div class="log-row">'
+    +'<input type="date" id="lg-date-'+fid+'" placeholder="Date">'
+    +'<select id="lg-type-'+fid+'">'
+    +'<option value="herb">Herbicide</option>'
+    +'<option value="fert">Fertilizer</option>'
+    +'<option value="irrig">Irrigation</option>'
+    +'<option value="harvest">Harvest</option>'
+    +'<option value="obs">Other</option>'
+    +'</select></div>'
+    +'<input type="text" id="lg-prod-'+fid+'" placeholder="Product name">'
+    +'<input type="text" id="lg-rate-'+fid+'" placeholder="Rate (e.g. 2 qt/ac)">'
+    +'<div class="log-row">'
+    +'<input type="text" id="lg-app-'+fid+'" placeholder="Applicator name">'
+    +'<input type="text" id="lg-wx-'+fid+'" placeholder="Weather conditions">'
+    +'</div>'
+    +'<textarea id="lg-notes-'+fid+'" placeholder="Notes (optional)"></textarea>'
+    +'<div class="btn-row">'
+    +'<button class="btn-p" onclick="saveLog(''+fid+'')"><i class="ti ti-plus"></i> Save entry</button>'
+    +'</div></div>';
+
+  document.getElementById('pane-log').innerHTML=
+    '<p class="sh">Application log -- '+fid+'</p>'
+    +(apps.length===0?'<p style="font-size:13px;color:var(--text-muted);margin-bottom:.75rem">No applications logged yet.</p>':entries)
+    +'<p class="sh" style="margin-top:1rem">Add entry</p>'
+    +formHTML
+    +'<p style="font-size:11px;color:var(--text-faint);margin-top:.75rem">Entries saved here are for reference only. To permanently record in the Sheet, copy to the Applications tab.</p>';
+
+  // Set today as default date
+  var today=new Date().toISOString().split('T')[0];
+  var dateEl=document.getElementById('lg-date-'+fid);
+  if(dateEl)dateEl.value=today;
+}
+
+function saveLog(fid){
+  var date=document.getElementById('lg-date-'+fid).value;
+  var type=document.getElementById('lg-type-'+fid).value;
+  var product=document.getElementById('lg-prod-'+fid).value.trim();
+  var rate=document.getElementById('lg-rate-'+fid).value.trim();
+  var applicator=document.getElementById('lg-app-'+fid).value.trim();
+  var weather=document.getElementById('lg-wx-'+fid).value.trim();
+  var notes=document.getElementById('lg-notes-'+fid).value.trim();
+  if(!date||!product){alert('Date and product are required.');return;}
+  if(!APPS[fid])APPS[fid]=[];
+  APPS[fid].unshift({field_id:fid,date:date,type:type,product:product,rate:rate,applicator:applicator,weather:weather,notes:notes});
+  buildLog(fid);
+  // Show copy reminder
+  alert('Entry saved for this session.\n\nTo make it permanent, add this row to the Applications tab in your Google Sheet:\n\n'+fid+' | '+date+' | '+product+' | '+rate+' | '+type+' | '+applicator+' | '+weather+' | '+notes);
+}
+
+
 function buildDetails(f){
   const plotSec=f.plot_length?`<div class="card" id="dc-plot">
     <div class="card-hd" onclick="toggleCard('dc-plot')"><div class="card-ttl"><i class="ti ti-ruler-2"></i>Plot geometry</div><i class="ti ti-chevron-down chev"></i></div>
@@ -452,8 +560,12 @@ function buildManage(fid,f,isP){
     <p class="sh" style="margin-top:1rem">Custom tasks (${ct.length})</p>
     ${ct.length===0?'<p style="font-size:12px;color:var(--text-muted)">No custom tasks added yet.</p>':ct.map((t,i)=>`<div class="mrow"><div><div style="font-size:13px;font-weight:600;color:var(--text)">${t.title}</div><div style="margin-top:3px"><span class="tag ${TAG_CLS[t.tag]||'to'}">${TAG_LBL[t.tag]||''}</span></div></div><button class="btn-d" onclick="removeTask('${fid}',${i})"><i class="ti ti-trash"></i></button></div>`).join('')}
     <p class="sh" style="margin-top:1rem">Edit field data</p>
-    <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="display:flex;align-items:center;gap:8px;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--dd-blue);text-decoration:none;font-weight:500">
-      <i class="ti ti-table" style="font-size:16px"></i> Open Google Sheet to edit field data <i class="ti ti-external-link" style="margin-left:auto;font-size:14px;color:var(--text-faint)"></i></a>`;
+    <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="display:flex;align-items:center;gap:8px;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--dd-blue);text-decoration:none;font-weight:500;margin-bottom:8px">
+      <i class="ti ti-table" style="font-size:16px"></i> Open Google Sheet to edit field data <i class="ti ti-external-link" style="margin-left:auto;font-size:14px;color:var(--text-faint)"></i></a>
+    <a href="?view=review" onclick="event.preventDefault();go('review')" style="display:flex;align-items:center;gap:8px;padding:.75rem 1rem;background:var(--amber-light);border:1px solid var(--amber-border);border-radius:var(--r);font-size:13px;color:var(--amber);text-decoration:none;font-weight:500;margin-bottom:8px">
+      <i class="ti ti-clipboard-list" style="font-size:16px"></i> PI submission review queue <i class="ti ti-chevron-right" style="margin-left:auto;font-size:14px"></i></a>
+    <a href="?view=rollover" onclick="event.preventDefault();go('rollover')" style="display:flex;align-items:center;gap:8px;padding:.75rem 1rem;background:var(--red-light);border:1px solid #F7C1C1;border-radius:var(--r);font-size:13px;color:var(--red);text-decoration:none;font-weight:500">
+      <i class="ti ti-refresh" style="font-size:16px"></i> Season rollover tool <i class="ti ti-chevron-right" style="margin-left:auto;font-size:14px"></i></a>\`;
 }
 
 function removeTask(fid,idx){
@@ -469,6 +581,133 @@ function resetSeason(fid){
   alert(`Field ${fid} reset complete.`);
   const f=FIELDS[fid];buildTasks(fid,f.perennial==='TRUE');buildHistory(fid,f);buildManage(fid,f,f.perennial==='TRUE');
 }
+
+function renderReview(root){
+  var pending=SUBS.filter(function(s){return s.status!=='approved';});
+  var approved=SUBS.filter(function(s){return s.status==='approved';});
+
+  function subCard(s,i){
+    var isPending=s.status!=='approved';
+    return '<div class="sub-card '+(isPending?'pending':'approved')+'">'
+      +'<div class="sub-head">'
+      +'<div><div class="sub-title">'+s.project_title+'</div>'
+      +'<div class="sub-pi">'+s.pi_name+' &nbsp;&middot;&nbsp; '+s.lab+'</div></div>'
+      +'<span class="sub-badge '+(isPending?'pending':'approved')+'">'+(isPending?'Pending':'Approved')+'</span>'
+      +'</div>'
+      +'<div class="sub-detail">'
+      +'<strong>Crop:</strong> '+s.crop+' &nbsp;&middot;&nbsp; '
+      +'<strong>Season:</strong> '+s.year+' &nbsp;&middot;&nbsp; '
+      +'<strong>Acreage:</strong> '+(s.acreage_needed||'TBD')+' ac<br>'
+      +(s.project_length?'<strong>Project length:</strong> '+s.project_length+'<br>':'')
+      +(s.restrictions?'<strong>Restrictions:</strong> '+s.restrictions+'<br>':'')
+      +(s.notes?'<strong>Notes:</strong> '+s.notes:'')
+      +'</div>'
+      +(isPending?'<div class="sub-assign">'
+        +'<input type="text" id="assign-'+i+'" placeholder="Assign field ID (e.g. N9)" style="max-width:160px">'
+        +'<button class="btn-p" onclick="approveSubmission('+i+')">Approve &amp; Add Field</button>'
+        +'<button class="btn-s" onclick="rejectSubmission('+i+')">Reject</button>'
+        +'</div>':'')
+      +'</div>';
+  }
+
+  root.innerHTML='<div style="background:var(--dd-blue);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<button onclick="go('field',null)" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:13px"><i class="ti ti-arrow-left"></i></button>'
+    +'<span style="color:#fff;font-size:14px;font-weight:600">Review Queue ('+pending.length+' pending)</span>'
+    +'</div></div>'
+    +'<div style="padding:.875rem 1rem">'
+    +(pending.length===0?'<p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem">No pending submissions.</p>':pending.map(subCard).join(''))
+    +(approved.length?'<p class="sh" style="margin-top:1rem">Recently approved</p>'+approved.slice(0,3).map(function(s,i){return subCard(s,pending.length+i);}).join(''):'')
+    +'<div style="margin-top:1rem;padding:.875rem;background:var(--dd-blue-light);border:1px solid #B5D4F4;border-radius:var(--r);font-size:12px;color:var(--dd-blue)">'
+    +'<strong>How to receive submissions:</strong> Share your Google Form link with PIs. Responses appear in the <code>Submissions</code> tab of your Google Sheet and show up here after a page refresh.'
+    +'</div></div>';
+}
+
+function approveSubmission(idx){
+  var s=SUBS[idx];
+  var fid=document.getElementById('assign-'+idx).value.trim().toUpperCase();
+  if(!fid){alert('Please enter a field ID first.');return;}
+  if(!confirm('Approve "'+s.project_title+'" and assign to field '+fid+'?\n\nThis will add the field to your Fields tab in Google Sheets. You will need to manually add the row to your Sheet.'))return;
+
+  // Build the fields row for the user to copy
+  var row=[
+    fid, s.section||'', s.acreage_needed||'', '', '', 'FALSE',
+    s.year||'2026', s.lab||'', s.pi_name||'', s.crop||'',
+    s.project_code||'', s.project_length||'', s.planting_date||'', s.tillage||'FALSE',
+    s.plot_length||'', s.planted_length||'', s.alley||'', s.columns||'', s.ranges||'',
+    s.row_width||'', s.seeds_per_row||'',
+    s.total_n||'', s.n_applications||'', s.n_gal_per_app||'', s.n_gal_total||'',
+    s.imaging||'N', s.giddings||'N', s.mini_rhizo||'N',
+    s.restrictions||'', s.notes||''
+  ].join('	');
+
+  alert('Add this row to your Fields tab in Google Sheets (Ctrl+C to copy):
+
+'+row);
+  SUBS[idx].status='approved';
+  renderReview(document.getElementById('root'));
+}
+
+function rejectSubmission(idx){
+  if(!confirm('Reject this submission?'))return;
+  SUBS.splice(idx,1);
+  renderReview(document.getElementById('root'));
+}
+
+
+function renderRollover(root){
+  if(!adminMode){root.innerHTML='<div class="error-box">Admin access required.</div>';return;}
+  var fields=Object.values(FIELDS).sort(function(a,b){return a.field_id.localeCompare(b.field_id);});
+  var newYear=parseInt(fields[0]&&fields[0].year||2026)+1;
+
+  var rows=fields.map(function(f){
+    var isP=f.perennial==='TRUE';
+    return '<div class="rollover-row">'
+      +'<span class="rollover-fid">'+f.field_id+'</span>'
+      +'<span class="rollover-crop">'+f.crop.split(',')[0]+' &nbsp;&middot;&nbsp; '+f.lab+'</span>'
+      +'<span class="rollover-badge '+(isP?'keep':'reset')+'">'+(isP?'Keep (perennial)':'Archive + reset')+'</span>'
+      +'</div>';
+  }).join('');
+
+  root.innerHTML='<div style="background:var(--dd-blue);padding:.75rem 1rem;display:flex;align-items:center;gap:10px">'
+    +'<button onclick="go('field',null)" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 10px;border-radius:20px;cursor:pointer;font-size:13px"><i class="ti ti-arrow-left"></i></button>'
+    +'<span style="color:#fff;font-size:14px;font-weight:600">Season Rollover to '+newYear+'</span>'
+    +'</div>'
+    +'<div style="padding:.875rem 1rem">'
+    +'<p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5">This will archive all annual fields from <strong>'+fields[0].year+'</strong> to your History tab and clear task checklists. Perennial fields will be kept as-is. You will need to update crop/PI assignments in your Google Sheet for the new season.</p>'
+    +'<div class="rollover-preview"><div class="rollover-head">Preview -- '+fields.length+' fields</div>'+rows+'</div>'
+    +'<div class="reset-box" style="margin-top:1rem">'
+    +'<div class="reset-ttl"><i class="ti ti-refresh" style="font-size:13px"></i> Confirm rollover to '+newYear+'</div>'
+    +'<div class="reset-desc">This resets all task checklists and custom tasks. It does NOT update your Google Sheet automatically -- you will get a History tab paste to copy in.</div>'
+    +'<button class="btn-danger" onclick="executeRollover('+newYear+')">Roll over all fields to '+newYear+'</button>'
+    +'</div></div>';
+}
+
+function executeRollover(newYear){
+  if(!confirm('Roll over ALL annual fields to '+newYear+'?\n\nTask checklists will be cleared. You will need to update the Google Sheet separately.'))return;
+
+  // Build history rows to paste into Sheet
+  var historyRows=['field_id	year	lab	crop'];
+  Object.values(FIELDS).forEach(function(f){
+    if(f.perennial!=='TRUE'){
+      historyRows.push(f.field_id+'	'+f.year+'	'+f.lab+'	'+f.crop);
+      taskState[f.field_id]={};
+      customTasks[f.field_id]=[];
+    }
+  });
+
+  var paste=historyRows.join('
+');
+  alert('Rollover complete!
+
+Copy these rows into your History tab in Google Sheets:
+
+'+paste+'
+
+Then update the "year" column in your Fields tab to '+newYear+' and assign new crops/PIs.');
+  go('field',null);
+}
+
 
 function renderIndex(root){
   const cards=Object.values(FIELDS).sort((a,b)=>a.field_id.localeCompare(b.field_id)).map(f=>{
@@ -535,6 +774,7 @@ function tryLogin(){
     document.getElementById('adminBanner').classList.add('on');
     document.getElementById('adminBtn').classList.add('on');
     document.getElementById('adminBtn').innerHTML='<i class="ti ti-shield-check"></i> Admin';
+    var al=document.getElementById('adminLinks');if(al)al.style.display='inline';
     render();
   }else{document.getElementById('loginErr').style.display='block';document.getElementById('loginPw').value='';}
 }
@@ -543,6 +783,7 @@ function lockAdmin(){
   document.getElementById('adminBanner').classList.remove('on');
   document.getElementById('adminBtn').classList.remove('on');
   document.getElementById('adminBtn').innerHTML='<i class="ti ti-lock"></i> Admin';
+  var al=document.getElementById('adminLinks');if(al)al.style.display='none';
   render();
 }
 
