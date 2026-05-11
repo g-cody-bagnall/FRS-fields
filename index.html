@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FRS Field Management -- DDPSC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.1/qrcode.min.js"></script>
 <style>
 :root{
   --dd-blue:#2B6A8A;--dd-blue-light:#E3EFF5;--dd-blue-mid:#4A90B8;
@@ -505,10 +504,6 @@ function renderQR(root){
     var g=document.getElementById('qrGrid');
     var status=document.getElementById('qrStatus');
     if(!g)return;
-    if(typeof QRCode==='undefined'){
-      if(status)status.textContent='QR library not loaded. Check internet connection.';
-      return;
-    }
     var fields=Object.values(FIELDS).sort(function(a,b){return a.field_id.localeCompare(b.field_id);});
     if(fields.length===0){
       if(status)status.textContent='No fields found. Check your Google Sheet.';
@@ -517,27 +512,19 @@ function renderQR(root){
     g.innerHTML='';
     fields.forEach(function(f){
       var url=SITE_URL+'?field='+f.field_id;
+      var encoded=encodeURIComponent(url);
+      var qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encoded+'&margin=4&color=000000&bgcolor=ffffff';
       var card=document.createElement('div');
       card.className='qr-card';
-      var qrDiv=document.createElement('div');
-      qrDiv.id='qr-'+f.field_id;
-      qrDiv.style.cssText='margin:0 auto 8px;width:150px;height:150px;';
-      var lbl=document.createElement('div');lbl.className='qr-lbl';lbl.textContent=f.field_id;
-      var sub=document.createElement('div');sub.className='qr-sub';sub.textContent=f.section+' - '+f.crop.split(',')[0];
-      var urlDiv=document.createElement('div');urlDiv.className='qr-url';urlDiv.textContent=url;
-      card.appendChild(qrDiv);card.appendChild(lbl);card.appendChild(sub);card.appendChild(urlDiv);
+      card.innerHTML='<img src="'+qrSrc+'" width="150" height="150" style="display:block;margin:0 auto 8px" alt="QR '+f.field_id+'">'
+        +'<div class="qr-lbl">'+f.field_id+'</div>'
+        +'<div class="qr-sub">'+f.section+' - '+f.crop.split(',')[0]+'</div>'
+        +'<div class="qr-url">'+url+'</div>';
       g.appendChild(card);
-      try{
-        new QRCode(qrDiv,{text:url,width:150,height:150,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
-      }catch(e){
-        console.error('QR failed for '+f.field_id+':',e);
-        qrDiv.textContent='QR error';
-      }
     });
     if(status)status.style.display='none';
   }
-  if(typeof QRCode!=='undefined'){setTimeout(generateQRs,100);}
-  else{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.1/qrcode.min.js';s.onload=function(){setTimeout(generateQRs,100);};document.head.appendChild(s);}
+  setTimeout(generateQRs,100);
 }
 
 function openLogin(){document.getElementById('loginModal').classList.add('on');setTimeout(()=>document.getElementById('loginPw').focus(),100);}
